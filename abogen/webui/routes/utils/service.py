@@ -63,5 +63,13 @@ def submit_job(pending: PendingJob) -> str:
         pronunciation_overrides=getattr(pending, "pronunciation_overrides", None),
         heteronym_overrides=getattr(pending, "heteronym_overrides", None),
         normalization_overrides=pending.normalization_overrides,
+        bilingual_subtitle_mode=getattr(pending, "bilingual_subtitle_mode", None),
+        translation_base_url=getattr(pending, "translation_base_url", None),
+        translation_api_key=getattr(pending, "translation_api_key", None),
+        translation_model=getattr(pending, "translation_model", None),
+        translation_source_lang=getattr(pending, "translation_source_lang", "en"),
+        translation_target_lang=getattr(pending, "translation_target_lang", "zh"),
+        translation_timeout=getattr(pending, "translation_timeout", 60.0),
+        translation_batch_size=getattr(pending, "translation_batch_size", 10),
     )
     return job.id

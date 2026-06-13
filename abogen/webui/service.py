@@ -158,6 +158,14 @@ class Job:
     normalization_overrides: Dict[str, Any] = field(default_factory=dict)
     speaker_voice_languages: List[str] = field(default_factory=list)
     applied_speaker_config: Optional[str] = None
+    bilingual_subtitle_mode: Optional[str] = None
+    translation_base_url: Optional[str] = None
+    translation_api_key: Optional[str] = None
+    translation_model: Optional[str] = None
+    translation_source_lang: str = "en"
+    translation_target_lang: str = "zh"
+    translation_timeout: float = 60.0
+    translation_batch_size: int = 10
 
     @property
     def estimated_time_remaining(self) -> Optional[float]:
@@ -244,6 +252,11 @@ class Job:
             "analysis_requested": self.analysis_requested,
             "speaker_voice_languages": list(self.speaker_voice_languages),
             "applied_speaker_config": self.applied_speaker_config,
+            "bilingual_subtitle_mode": self.bilingual_subtitle_mode,
+            "translation_base_url": self.translation_base_url,
+            "translation_model": self.translation_model,
+            "translation_source_lang": self.translation_source_lang,
+            "translation_target_lang": self.translation_target_lang,
             "entity_summary": dict(self.entity_summary),
             "manual_overrides": [dict(entry) for entry in self.manual_overrides],
             "pronunciation_overrides": [dict(entry) for entry in self.pronunciation_overrides],
@@ -576,6 +589,14 @@ class PendingJob:
     heteronym_overrides: List[Dict[str, Any]] = field(default_factory=list)
     entity_cache_key: Optional[str] = None
     wizard_max_step_index: int = 0
+    bilingual_subtitle_mode: Optional[str] = None
+    translation_base_url: Optional[str] = None
+    translation_api_key: Optional[str] = None
+    translation_model: Optional[str] = None
+    translation_source_lang: str = "en"
+    translation_target_lang: str = "zh"
+    translation_timeout: float = 60.0
+    translation_batch_size: int = 10
 
 
 class ConversionService:
@@ -659,6 +680,14 @@ class ConversionService:
         pronunciation_overrides: Optional[Iterable[Mapping[str, Any]]] = None,
         heteronym_overrides: Optional[Iterable[Mapping[str, Any]]] = None,
         normalization_overrides: Optional[Mapping[str, Any]] = None,
+        bilingual_subtitle_mode: Optional[str] = None,
+        translation_base_url: Optional[str] = None,
+        translation_api_key: Optional[str] = None,
+        translation_model: Optional[str] = None,
+        translation_source_lang: str = "en",
+        translation_target_lang: str = "zh",
+        translation_timeout: float = 60.0,
+        translation_batch_size: int = 10,
     ) -> Job:
         job_id = uuid.uuid4().hex
         normalized_metadata = self._normalize_metadata_tags(metadata_tags)
@@ -713,6 +742,14 @@ class ConversionService:
             pronunciation_overrides=[dict(entry) for entry in pronunciation_overrides] if pronunciation_overrides else [],
             heteronym_overrides=[dict(entry) for entry in heteronym_overrides] if heteronym_overrides else [],
             normalization_overrides=dict(normalization_overrides or {}),
+            bilingual_subtitle_mode=bilingual_subtitle_mode,
+            translation_base_url=translation_base_url,
+            translation_api_key=translation_api_key,
+            translation_model=translation_model,
+            translation_source_lang=translation_source_lang,
+            translation_target_lang=translation_target_lang,
+            translation_timeout=translation_timeout,
+            translation_batch_size=translation_batch_size,
         )
         with self._lock:
             self._jobs[job_id] = job
@@ -1203,6 +1240,14 @@ class ConversionService:
             "pronunciation_overrides": [dict(entry) for entry in job.pronunciation_overrides],
             "heteronym_overrides": [dict(entry) for entry in job.heteronym_overrides],
             "normalization_overrides": dict(job.normalization_overrides),
+            "bilingual_subtitle_mode": job.bilingual_subtitle_mode,
+            "translation_base_url": job.translation_base_url,
+            "translation_api_key": job.translation_api_key,
+            "translation_model": job.translation_model,
+            "translation_source_lang": job.translation_source_lang,
+            "translation_target_lang": job.translation_target_lang,
+            "translation_timeout": job.translation_timeout,
+            "translation_batch_size": job.translation_batch_size,
         }
 
     def _persist_state(self) -> None:
@@ -1334,6 +1379,14 @@ class ConversionService:
             dict(entry) for entry in payload.get("heteronym_overrides", []) if isinstance(entry, Mapping)
         ]
         job.normalization_overrides = dict(payload.get("normalization_overrides", {}) or {})
+        job.bilingual_subtitle_mode = payload.get("bilingual_subtitle_mode")
+        job.translation_base_url = payload.get("translation_base_url")
+        job.translation_api_key = payload.get("translation_api_key")
+        job.translation_model = payload.get("translation_model")
+        job.translation_source_lang = payload.get("translation_source_lang", "en")
+        job.translation_target_lang = payload.get("translation_target_lang", "zh")
+        job.translation_timeout = float(payload.get("translation_timeout", 60.0))
+        job.translation_batch_size = int(payload.get("translation_batch_size", 10))
         job.pause_event.set()
         return job
 

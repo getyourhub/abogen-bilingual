@@ -222,6 +222,77 @@
     </section>
 
     <section class="form-section">
+      <h3 class="form-section__title">Bilingual subtitles (translation)</h3>
+      <div class="field-grid field-grid--compact">
+        <div class="field field--span-2">
+          <label for="bilingual_subtitle_mode">Bilingual mode</label>
+          <select id="bilingual_subtitle_mode" name="bilingual_subtitle_mode" {{ 'disabled' if readonly else '' }}>
+            <option value="" {% if not pending or not pending.bilingual_subtitle_mode %}selected{% endif %}>Disabled</option>
+            <option value="original_on_top" {% if pending and pending.bilingual_subtitle_mode == 'original_on_top' %}selected{% endif %}>Original on top, translation below</option>
+            <option value="translation_on_top" {% if pending and pending.bilingual_subtitle_mode == 'translation_on_top' %}selected{% endif %}>Translation on top, original below</option>
+            <option value="translation_only" {% if pending and pending.bilingual_subtitle_mode == 'translation_only' %}selected{% endif %}>Translation only</option>
+          </select>
+          <p class="hint">Enable bilingual subtitles by translating the original text using an LLM.</p>
+        </div>
+        <div class="field field--span-2" id="translation_settings" {% if not pending or not pending.bilingual_subtitle_mode %}hidden{% endif %}>
+          <div class="field-grid field-grid--compact">
+            <div class="field field--span-2">
+              <label for="translation_base_url">LLM API Base URL</label>
+              <input type="text" id="translation_base_url" name="translation_base_url" 
+                     placeholder="http://localhost:11434 or https://api.openai.com"
+                     value="{{ pending.translation_base_url if pending and pending.translation_base_url else '' }}" 
+                     {{ 'disabled' if readonly else '' }}>
+              <p class="hint">OpenAI-compatible endpoint (Ollama, OpenAI, LM Studio, etc.)</p>
+            </div>
+            <div class="field field--span-2">
+              <label for="translation_api_key">API Key (optional)</label>
+              <input type="password" id="translation_api_key" name="translation_api_key" 
+                     placeholder="sk-... or leave empty for local models"
+                     value="{{ pending.translation_api_key if pending and pending.translation_api_key else '' }}" 
+                     {{ 'disabled' if readonly else '' }}>
+            </div>
+            <div class="field field--span-2">
+              <label for="translation_model">Model</label>
+              <input type="text" id="translation_model" name="translation_model" 
+                     placeholder="gpt-4o-mini, llama3, qwen2, etc."
+                     value="{{ pending.translation_model if pending and pending.translation_model else '' }}" 
+                     {{ 'disabled' if readonly else '' }}>
+            </div>
+            <div class="field">
+              <label for="translation_source_lang">Source language</label>
+              <select id="translation_source_lang" name="translation_source_lang" {{ 'disabled' if readonly else '' }}>
+                {% for key, label in options.languages.items() %}
+                <option value="{{ key }}" {% if pending and pending.translation_source_lang == key %}selected{% elif not pending and key == 'en' %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label for="translation_target_lang">Target language</label>
+              <select id="translation_target_lang" name="translation_target_lang" {{ 'disabled' if readonly else '' }}>
+                {% for key, label in options.languages.items() %}
+                <option value="{{ key }}" {% if pending and pending.translation_target_lang == key %}selected{% elif not pending and key == 'zh' %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label for="translation_timeout">Timeout (seconds)</label>
+              <input type="number" min="10" max="300" id="translation_timeout" name="translation_timeout" 
+                     value="{{ pending.translation_timeout if pending and pending.translation_timeout else 60 }}" 
+                     {{ 'disabled' if readonly else '' }}>
+            </div>
+            <div class="field">
+              <label for="translation_batch_size">Batch size</label>
+              <input type="number" min="1" max="50" id="translation_batch_size" name="translation_batch_size" 
+                     value="{{ pending.translation_batch_size if pending and pending.translation_batch_size else 10 }}" 
+                     {{ 'disabled' if readonly else '' }}>
+              <p class="hint">Number of subtitles to translate in one API call.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="form-section">
       <h3 class="form-section__title">Book Metadata</h3>
       <div class="field-grid field-grid--compact">
         <div class="field field--span-2">
@@ -423,3 +494,23 @@
     </div>
   </footer>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const bilingualSelect = document.getElementById('bilingual_subtitle_mode');
+  const translationSettings = document.getElementById('translation_settings');
+  
+  if (bilingualSelect && translationSettings) {
+    function toggleTranslationSettings() {
+      if (bilingualSelect.value) {
+        translationSettings.hidden = false;
+      } else {
+        translationSettings.hidden = true;
+      }
+    }
+    
+    bilingualSelect.addEventListener('change', toggleTranslationSettings);
+    toggleTranslationSettings();
+  }
+});
+</script>

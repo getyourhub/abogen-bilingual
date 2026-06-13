@@ -643,6 +643,29 @@ def apply_book_step_form(
 
     pending.applied_speaker_config = (form.get("speaker_config") or "").strip() or None
 
+    # Bilingual subtitle settings
+    bilingual_mode = str(form.get("bilingual_subtitle_mode") or "").strip()
+    if bilingual_mode and bilingual_mode != "Disabled":
+        pending.bilingual_subtitle_mode = bilingual_mode
+        pending.translation_base_url = str(form.get("translation_base_url") or "").strip() or None
+        pending.translation_api_key = str(form.get("translation_api_key") or "").strip() or None
+        pending.translation_model = str(form.get("translation_model") or "").strip() or None
+        pending.translation_source_lang = str(form.get("translation_source_lang") or "en").strip()
+        pending.translation_target_lang = str(form.get("translation_target_lang") or "zh").strip()
+        try:
+            pending.translation_timeout = max(10.0, float(form.get("translation_timeout", 60.0)))
+        except (TypeError, ValueError):
+            pending.translation_timeout = 60.0
+        try:
+            pending.translation_batch_size = max(1, min(50, int(form.get("translation_batch_size", 10))))
+        except (TypeError, ValueError):
+            pending.translation_batch_size = 10
+    else:
+        pending.bilingual_subtitle_mode = None
+        pending.translation_base_url = None
+        pending.translation_api_key = None
+        pending.translation_model = None
+
     # Metadata updates
     if "meta_title" in form:
         pending.metadata_tags["title"] = str(form.get("meta_title", "")).strip()
@@ -955,6 +978,24 @@ def build_pending_job_from_extraction(
         speaker_analysis_threshold=analysis_threshold,
         analysis_requested=initial_analysis,
     )
+
+    # Bilingual subtitle settings
+    bilingual_mode = str(form.get("bilingual_subtitle_mode") or "").strip()
+    if bilingual_mode and bilingual_mode != "Disabled":
+        pending.bilingual_subtitle_mode = bilingual_mode
+        pending.translation_base_url = str(form.get("translation_base_url") or "").strip() or None
+        pending.translation_api_key = str(form.get("translation_api_key") or "").strip() or None
+        pending.translation_model = str(form.get("translation_model") or "").strip() or None
+        pending.translation_source_lang = str(form.get("translation_source_lang") or "en").strip()
+        pending.translation_target_lang = str(form.get("translation_target_lang") or "zh").strip()
+        try:
+            pending.translation_timeout = max(10.0, float(form.get("translation_timeout", 60.0)))
+        except (TypeError, ValueError):
+            pending.translation_timeout = 60.0
+        try:
+            pending.translation_batch_size = max(1, min(50, int(form.get("translation_batch_size", 10))))
+        except (TypeError, ValueError):
+            pending.translation_batch_size = 10
 
     return PendingBuildResult(
         pending=pending,
