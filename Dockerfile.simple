@@ -1,0 +1,47 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ffmpeg \
+        libsndfile1 \
+        libgl1 \
+        libglib2.0-0 \
+        espeak-ng \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY pyproject.toml README.md ./
+COPY abogen ./abogen
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir . && \
+    pip install --no-cache-dir "mutagen>=1.47.0"
+
+ENV ABOGEN_HOST=0.0.0.0 \
+    ABOGEN_PORT=8808
+
+EXPOSE 8808
+
+VOLUME ["/data"]
+
+ENV ABOGEN_UPLOAD_ROOT=/data/uploads \
+    ABOGEN_OUTPUT_ROOT=/data/outputs \
+    ABOGEN_TEMP_DIR=/data/cache \
+    ABOGEN_VOICE_CACHE_DIR=/data/voice-cache \
+    HF_HOME=/data/huggingface \
+    HUGGINGFACE_HUB_CACHE=/data/huggingface/hub
+
+# Create non-root user and setup permissions
+RUN useradd -m -u 1000 abogen && \
+    mkdir -p /data/uploads /data/outputs /data/cache /data/voice-cache /data/huggingface && \
+    chown -R abogen:abogen /data /app
+
+USER abogen
+
+CMD ["abogen-web"]
